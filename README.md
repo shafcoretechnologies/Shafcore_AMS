@@ -47,9 +47,10 @@ CREATE DATABASE asset_management;
 Prisma CLI uses `.env` in project root.
 
 1. Copy `.env.example` to `.env`
-2. Set connection string:
+2. Set connection string for local development:
 ```env
 DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/asset_management?schema=public"
+DIRECT_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/asset_management?schema=public"
 SEED_DEFAULT_PASSWORD="ChangeMeNow123!"
 AUTH_BOOTSTRAP_SECRET="replace-with-a-long-random-secret"
 ```
@@ -57,6 +58,22 @@ AUTH_BOOTSTRAP_SECRET="replace-with-a-long-random-secret"
 Note:
 - `.env.local` is used by Next.js runtime.
 - Prisma migrate/generate requires `.env` unless you explicitly pass env vars.
+
+## Vercel + Supabase production env
+Set these in Vercel Project Settings -> Environment Variables:
+
+```env
+# Supabase pooler (runtime for Prisma in serverless)
+DATABASE_URL="postgresql://postgres.PROJECT_REF:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require"
+
+# Direct Supabase connection (Prisma migrations/introspection)
+DIRECT_URL="postgresql://postgres:YOUR_PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres?sslmode=require"
+```
+
+Important:
+- Keep local `.env` on localhost values for development.
+- Use Supabase pooler URL in production `DATABASE_URL` (not `db....:5432`).
+- If password has special characters, URL-encode it.
 
 ## Install and run
 ```bash
