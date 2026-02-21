@@ -10,7 +10,20 @@ export default async function AssetsPage() {
     redirect("/login");
   }
 
-  const [branches, locations, bays, employees, assetTypes, assetModels, ramModules, storageDevices, assets] = await Promise.all([
+  const hasRamModuleDelegate = typeof prisma.ramModule?.findMany === "function";
+  const hasStorageDeviceDelegate = typeof prisma.storageDevice?.findMany === "function";
+
+  const assetInclude = {
+    assetType: true,
+    branch: true,
+    location: true,
+    bay: true,
+    currentEmployee: true,
+    ...(hasRamModuleDelegate ? { ramModules: { include: { ramModule: true } } } : {}),
+    ...(hasStorageDeviceDelegate ? { storageDevices: { include: { storageDevice: true } } } : {}),
+  };
+
+  const [branches, locations, bays, employees, assetTypes, assetModels, ramModules, storageDevices, rawAssets] = await Promise.all([
     prisma.branch.findMany({ orderBy: { name: "asc" } }),
     prisma.location.findMany({ orderBy: [{ branch: { name: "asc" } }, { name: "asc" }], include: { branch: true } }),
     prisma.bay.findMany({
@@ -23,22 +36,24 @@ export default async function AssetsPage() {
       orderBy: [{ assetType: { name: "asc" } }, { manufacturer: "asc" }, { modelName: "asc" }],
       include: { assetType: true },
     }),
-    prisma.ramModule.findMany({ orderBy: [{ make: "asc" }, { model: "asc" }, { sizeGb: "asc" }] }),
-    prisma.storageDevice.findMany({ orderBy: [{ make: "asc" }, { model: "asc" }, { sizeGb: "asc" }] }),
+    hasRamModuleDelegate
+      ? prisma.ramModule.findMany({ orderBy: [{ make: "asc" }, { model: "asc" }, { sizeGb: "asc" }] })
+      : Promise.resolve([]),
+    hasStorageDeviceDelegate
+      ? prisma.storageDevice.findMany({ orderBy: [{ make: "asc" }, { model: "asc" }, { sizeGb: "asc" }] })
+      : Promise.resolve([]),
     prisma.asset.findMany({
       take: 40,
       orderBy: { createdAt: "desc" },
-      include: {
-        assetType: true,
-        branch: true,
-        location: true,
-        bay: true,
-        currentEmployee: true,
-        ramModules: { include: { ramModule: true } },
-        storageDevices: { include: { storageDevice: true } },
-      },
+      include: assetInclude,
     }),
   ]);
+
+  const assets = rawAssets.map((asset) => ({
+    ...asset,
+    ramModules: asset.ramModules ?? [],
+    storageDevices: asset.storageDevices ?? [],
+  }));
 
   return (
     <div className={styles.page}>
