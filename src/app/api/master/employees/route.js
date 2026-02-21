@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth/guards";
 import { ensureSameOrigin } from "@/lib/auth/csrf";
 
 const READ_ROLES = ["SUPER_ADMIN", "IT_ADMIN", "IT_MANAGER", "AUDITOR"];
-const WRITE_ROLES = ["SUPER_ADMIN", "IT_ADMIN"];
+const WRITE_ROLES = ["SUPER_ADMIN", "IT_ADMIN", "IT_MANAGER"];
 
 export async function GET(request) {
   const auth = await requireRole(request, READ_ROLES);

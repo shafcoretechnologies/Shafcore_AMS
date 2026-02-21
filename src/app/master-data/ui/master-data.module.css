@@ -124,12 +124,46 @@
 .tableCard li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 10px;
   background: #f7fbee;
   border: 1px solid #dbe7ca;
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 14px;
+}
+
+.tableCard li button {
+  border: 1px solid #2f5f32;
+  background: #2f5f32;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.tableCard li button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.inlineEditor {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.inlineEditor input,
+.inlineEditor select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #bad0ab;
+  background: #fcfff9;
+}
+
+.inlineActions {
+  display: flex;
+  gap: 8px;
 }
 
 @media (max-width: 900px) {

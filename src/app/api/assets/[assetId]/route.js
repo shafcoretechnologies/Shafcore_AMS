@@ -1,55 +1,15 @@
 import { NextResponse } from "next/server";
-import { ApprovalAction, ApprovalStatus, AssetStatus } from "@prisma/client";
+import { AssetStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/guards";
 import { ensureSameOrigin } from "@/lib/auth/csrf";
 
-export async function GET(request) {
-  const auth = await requireRole(request, ["SUPER_ADMIN", "IT_ADMIN", "IT_MANAGER", "AUDITOR"]);
-  if (!auth.ok) {
-    return auth.response;
-  }
-
-  const { searchParams } = new URL(request.url);
-  const branchId = searchParams.get("branchId");
-  const bayCode = searchParams.get("bayCode");
-  const q = searchParams.get("q");
-
-  const assets = await prisma.asset.findMany({
-    where: {
-      ...(branchId ? { branchId } : {}),
-      ...(q
-        ? {
-            OR: [
-              { assetTag: { contains: q, mode: "insensitive" } },
-              { serialNumber: { contains: q, mode: "insensitive" } },
-              { make: { contains: q, mode: "insensitive" } },
-              { model: { contains: q, mode: "insensitive" } },
-              { osVersion: { contains: q, mode: "insensitive" } },
-              { processorDetails: { contains: q, mode: "insensitive" } },
-              { serviceTag: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-      ...(bayCode ? { bay: { code: bayCode } } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      assetType: true,
-      assetModel: true,
-      branch: true,
-      location: true,
-      bay: true,
-      currentEmployee: true,
-      ramModules: { include: { ramModule: true } },
-      storageDevices: { include: { storageDevice: true } },
-    },
-  });
-
-  return NextResponse.json({ data: assets });
+function toPositiveNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
 }
 
-export async function POST(request) {
+export async function PATCH(request, { params }) {
   try {
     const csrfError = ensureSameOrigin(request);
     if (csrfError) {
@@ -62,6 +22,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
+    const assetId = params.assetId;
     const {
       assetTag,
       assetTypeId,
@@ -78,9 +39,6 @@ export async function POST(request) {
       purchaseDate,
       vendorName,
       invoiceNumber,
-      invoiceDate,
-      invoiceAmount,
-      invoiceFileUrl,
       specification,
       notes,
       parentAssetId,
@@ -115,14 +73,17 @@ export async function POST(request) {
       warrantyUnit,
       floor,
       bayCode,
+      invoiceDate,
+      invoiceAmount,
+      invoiceFileUrl,
       repairOrReplacement,
       replaceAssetId,
     } = body;
 
     const cleanTag = assetTag?.trim();
-    if (!cleanTag || !assetTypeId || !branchId) {
+    if (!assetId || !cleanTag || !assetTypeId || !branchId) {
       return NextResponse.json(
-        { error: "assetTag, assetTypeId, and branchId are required." },
+        { error: "assetId, assetTag, assetTypeId, and branchId are required." },
         { status: 400 },
       );
     }
@@ -157,11 +118,6 @@ export async function POST(request) {
         },
       });
       resolvedAssetModelId = createdModel.id;
-    }
-
-    function toPositiveNumber(value) {
-      const numeric = Number(value);
-      return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
     }
 
     const cleanPurchaseDate = purchaseDate ? new Date(purchaseDate) : null;
@@ -207,7 +163,7 @@ export async function POST(request) {
       replacementForAssetId: replaceAssetId || null,
     };
 
-    const result = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx) => {
       const ramIds = Array.isArray(selectedRamModuleIds)
         ? selectedRamModuleIds.map((value) => String(value).trim()).filter(Boolean)
         : [];
@@ -270,8 +226,8 @@ export async function POST(request) {
         storageIds.push(createdStorage.id);
       }
 
-      const autoApprove = auth.user.role === "SUPER_ADMIN" || auth.user.role === "IT_MANAGER";
-      const asset = await tx.asset.create({
+      const asset = await tx.asset.update({
+        where: { id: assetId },
         data: {
           assetTag: cleanTag,
           assetTypeId,
@@ -303,23 +259,18 @@ export async function POST(request) {
           notes,
           parentAssetId,
           status: currentEmployeeId ? AssetStatus.ASSIGNED : AssetStatus.IN_STOCK,
-          approvalStatus: autoApprove ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
-          createdById: auth.user.id,
-          approvedById: autoApprove ? auth.user.id : null,
+        },
+        include: {
+          assetType: true,
+          assetModel: true,
+          branch: true,
+          location: true,
+          bay: true,
+          currentEmployee: true,
+          ramModules: { include: { ramModule: true } },
+          storageDevices: { include: { storageDevice: true } },
         },
       });
-
-      const approval = autoApprove
-        ? null
-        : await tx.assetApproval.create({
-            data: {
-              assetId: asset.id,
-              action: ApprovalAction.CREATE,
-              status: ApprovalStatus.PENDING,
-              requestedById: auth.user.id,
-              snapshot: body,
-            },
-          });
 
       const childIds = Array.isArray(linkedChildAssetIds)
         ? linkedChildAssetIds.map((value) => String(value).trim()).filter(Boolean)
@@ -335,6 +286,7 @@ export async function POST(request) {
         });
       }
 
+      await tx.assetRamModule.deleteMany({ where: { assetId: asset.id } });
       if (ramIds.length) {
         await tx.assetRamModule.createMany({
           data: Array.from(new Set(ramIds)).map((ramModuleId) => ({
@@ -345,6 +297,7 @@ export async function POST(request) {
         });
       }
 
+      await tx.assetStorageDevice.deleteMany({ where: { assetId: asset.id } });
       if (storageIds.length) {
         await tx.assetStorageDevice.createMany({
           data: Array.from(new Set(storageIds)).map((storageDeviceId) => ({
@@ -386,11 +339,11 @@ export async function POST(request) {
         }
       }
 
-      return { asset, approval };
+      return asset;
     });
 
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json({ data: updated });
   } catch (error) {
-    return NextResponse.json({ error: "Unable to create asset.", detail: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Unable to update asset.", detail: error.message }, { status: 500 });
   }
 }

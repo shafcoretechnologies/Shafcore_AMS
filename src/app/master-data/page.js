@@ -9,8 +9,9 @@ export default async function MasterDataPage() {
   if (!session) {
     redirect("/login");
   }
+  const canReadUsers = ["SUPER_ADMIN", "IT_ADMIN", "IT_MANAGER"].includes(session.user.role);
 
-  const [branches, locations, bays, employees] = await Promise.all([
+  const [branches, locations, bays, employees, users] = await Promise.all([
     prisma.branch.findMany({
       orderBy: [{ name: "asc" }],
       include: { _count: { select: { locations: true, employees: true, assets: true } } },
@@ -27,6 +28,19 @@ export default async function MasterDataPage() {
       orderBy: [{ branch: { name: "asc" } }, { name: "asc" }],
       include: { branch: true, _count: { select: { currentAssets: true } } },
     }),
+    canReadUsers
+      ? prisma.user.findMany({
+          orderBy: [{ createdAt: "desc" }],
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            passwordUpdatedAt: true,
+            createdAt: true,
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   return (
@@ -39,7 +53,7 @@ export default async function MasterDataPage() {
         </header>
         <MasterDataWorkspace
           role={session.user.role}
-          initialData={{ branches, locations, bays, employees }}
+          initialData={{ branches, locations, bays, employees, users }}
         />
       </main>
     </div>

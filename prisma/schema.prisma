@@ -188,10 +188,23 @@ model Asset {
   status               AssetStatus       @default(IN_STOCK)
   serialNumber         String?
   warrantyExpiry       DateTime?
+  warrantyMonths       Int?
   firmwareVersion      String?
   purchaseDate         DateTime?
   vendorName           String?
   invoiceNumber        String?
+  invoiceDate          DateTime?
+  invoiceAmount        Decimal?          @db.Decimal(12, 2)
+  invoiceFileUrl       String?
+  serviceTag           String?
+  osVersion            String?
+  processorDetails     String?
+  make                 String?
+  model                String?
+  adapterTagNumber     String?
+  floor                String?
+  repairAction         String?
+  replacementForAssetId String?
   specification        Json?
   notes                String?
   approvalStatus       ApprovalStatus    @default(PENDING)
@@ -211,14 +224,81 @@ model Asset {
   approvedBy           User?             @relation("AssetApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
   parentAsset          Asset?            @relation("AssetBundle", fields: [parentAssetId], references: [id], onDelete: SetNull)
   childAssets          Asset[]           @relation("AssetBundle")
+  replacementForAsset  Asset?            @relation("AssetReplacement", fields: [replacementForAssetId], references: [id], onDelete: SetNull)
+  replacedByAssets     Asset[]           @relation("AssetReplacement")
   approvals            AssetApproval[]
   assignments          AssetAssignment[]
+  ramModules           AssetRamModule[]
+  storageDevices       AssetStorageDevice[]
   firmwareHistory      FirmwareHistory[]
   auditLogs            AssetAuditLog[]
 
   @@index([branchId, locationId, bayId])
   @@index([warrantyExpiry])
   @@index([firmwareVersion])
+  @@index([serviceTag])
+  @@index([osVersion])
+  @@index([processorDetails])
+  @@index([make, model])
+  @@index([replacementForAssetId])
+}
+
+model RamModule {
+  id               String         @id @default(cuid())
+  make             String
+  model            String
+  vendor           String
+  purchaseDate     DateTime
+  warrantyMonths   Int
+  warrantyExpiry   DateTime
+  sizeGb           Int
+  type             String
+  serialNumber     String         @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  assets           AssetRamModule[]
+
+  @@index([make, model])
+}
+
+model StorageDevice {
+  id               String              @id @default(cuid())
+  make             String
+  model            String
+  vendor           String
+  purchaseDate     DateTime
+  warrantyMonths   Int
+  warrantyExpiry   DateTime
+  sizeGb           Int
+  type             String
+  serialNumber     String              @unique
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  assets           AssetStorageDevice[]
+
+  @@index([make, model])
+}
+
+model AssetRamModule {
+  assetId        String
+  ramModuleId    String
+  linkedAt       DateTime    @default(now())
+  asset          Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  ramModule      RamModule   @relation(fields: [ramModuleId], references: [id], onDelete: Restrict)
+
+  @@id([assetId, ramModuleId])
+  @@index([ramModuleId])
+}
+
+model AssetStorageDevice {
+  assetId          String
+  storageDeviceId  String
+  linkedAt         DateTime       @default(now())
+  asset            Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  storageDevice    StorageDevice  @relation(fields: [storageDeviceId], references: [id], onDelete: Restrict)
+
+  @@id([assetId, storageDeviceId])
+  @@index([storageDeviceId])
 }
 
 model AssetAssignment {

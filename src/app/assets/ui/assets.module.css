@@ -60,16 +60,32 @@
   padding: 14px;
 }
 
+.profileHint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #385536;
+  font-family: var(--font-ibm-plex-mono), monospace;
+}
+
 .form {
   margin-top: 10px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
 }
 
-.form label {
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
   font-size: 12px;
   color: #385536;
+}
+
+.fieldFull {
+  grid-column: 1 / -1;
 }
 
 .form input,
@@ -81,12 +97,16 @@
   background: #fcfff9;
 }
 
+.fullWidthControl {
+  width: 100%;
+}
+
 .form textarea {
-  grid-column: span 3;
+  grid-column: span 1;
 }
 
 .form button {
-  grid-column: span 3;
+  grid-column: span 1;
   border: 1px solid #2f5f32;
   background: #2f5f32;
   color: #fff;
@@ -100,6 +120,50 @@
   cursor: not-allowed;
 }
 
+.formActions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+
+.sectionTitle {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #2f5f32;
+  border-top: 1px dashed #c9d8bc;
+  padding-top: 8px;
+}
+
+.secondaryButton {
+  border: 1px solid #6a7f63 !important;
+  background: #f4f9ef !important;
+  color: #2f5f32 !important;
+}
+
+.bayAssets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bayAssets span {
+  border: 1px solid #dbe7ca;
+  background: #f7fbee;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.warningNote {
+  border: 1px solid #e1c46d;
+  background: #fff8dd;
+  color: #5f4b0f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
 .tableCard ul {
   list-style: none;
   margin-top: 8px;
@@ -109,7 +173,8 @@
 
 .tableCard li {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
   gap: 8px;
   background: #f7fbee;
   border: 1px solid #dbe7ca;
@@ -118,17 +183,46 @@
   font-size: 13px;
 }
 
+.tableCard li button {
+  border: 1px solid #2f5f32;
+  background: #2f5f32;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.tableCard li button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
+  .form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fieldFull,
+  .formActions,
+  .form textarea,
+  .form button {
+    grid-column: 1 / -1;
+  }
+
+  .tableCard li {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
   .form {
     grid-template-columns: 1fr;
   }
 
+  .fieldFull,
+  .formActions,
   .form textarea,
   .form button {
-    grid-column: span 1;
-  }
-
-  .tableCard li {
-    grid-template-columns: 1fr 1fr;
+    grid-column: 1 / -1;
   }
 }
