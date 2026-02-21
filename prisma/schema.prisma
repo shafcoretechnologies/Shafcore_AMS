@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  IT_ADMIN
+  IT_MANAGER
+  AUDITOR
+}
+
+enum AssetStatus {
+  IN_STOCK
+  ASSIGNED
+  IN_USE
+  IN_REPAIR
+  RETIRED
+  DISPOSED
+  LOST
+}
+
+enum ApprovalStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalAction {
+  CREATE
+  UPDATE
+  RETIRE
+  DISPOSE
+}
+
+enum AssignmentType {
+  EMPLOYEE
+  LOCATION
+  BAY
+}
+
+model User {
+  id                 String           @id @default(cuid())
+  name               String
+  email              String           @unique
+  role               UserRole
+  passwordHash       String?
+  passwordUpdatedAt  DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  createdAssets      Asset[]          @relation("AssetCreatedBy")
+  approvedAssets     Asset[]          @relation("AssetApprovedBy")
+  requestedApprovals AssetApproval[]  @relation("ApprovalRequestedBy")
+  reviewedApprovals  AssetApproval[]  @relation("ApprovalReviewedBy")
+  assignmentsCreated AssetAssignment[]
+  firmwareUpdates    FirmwareHistory[]
+  auditLogs          AssetAuditLog[]
+  sessions           UserSession[]
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, revokedAt])
+}
+
+model LoginRateLimit {
+  key         String   @id
+  attempts    Int      @default(0)
+  windowStart DateTime @default(now())
+  blockedUntil DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+model Branch {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  name       String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  locations  Location[]
+  employees  Employee[]
+  assets     Asset[]
+  assignment AssetAssignment[]
+}
+
+model Location {
+  id            String            @id @default(cuid())
+  branchId      String
+  name          String
+  floor         String?
+  roomCode      String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  branch        Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bays          Bay[]
+  assets        Asset[]
+  assignments   AssetAssignment[]
+
+  @@index([branchId, name])
+}
+
+model Bay {
+  id            String            @id @default(cuid())
+  locationId     String
+  code          String
+  description   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  location      Location          @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  assets        Asset[]
+  assignments   AssetAssignment[]
+
+  @@unique([locationId, code])
+  @@index([code])
+}
+
+model Employee {
+  id                   String            @id @default(cuid())
+  branchId             String
+  employeeCode         String
+  name                 String
+  email                String?
+  department           String?
+  designation          String?
+  isActive             Boolean           @default(true)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  branch               Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  currentAssets        Asset[]
+  assignmentHistory    AssetAssignment[]
+
+  @@unique([branchId, employeeCode])
+  @@index([name])
+}
+
+model AssetType {
+  id              String      @id @default(cuid())
+  name            String      @unique
+  requiresSerial  Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  models          AssetModel[]
+  assets          Asset[]
+}
+
+model AssetModel {
+  id                     String    @id @default(cuid())
+  assetTypeId            String
+  manufacturer           String
+  modelName              String
+  specs                  Json?
+  defaultWarrantyMonths  Int?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  assetType              AssetType @relation(fields: [assetTypeId], references: [id], onDelete: Restrict)
+  assets                 Asset[]
+
+  @@unique([assetTypeId, manufacturer, modelName])
+}
+
+model Asset {
+  id                   String            @id @default(cuid())
+  assetTag             String            @unique
+  assetTypeId          String
+  assetModelId         String?
+  branchId             String
+  locationId           String?
+  bayId                String?
+  currentEmployeeId    String?
+  status               AssetStatus       @default(IN_STOCK)
+  serialNumber         String?
+  warrantyExpiry       DateTime?
+  firmwareVersion      String?
+  purchaseDate         DateTime?
+  vendorName           String?
+  invoiceNumber        String?
+  specification        Json?
+  notes                String?
+  approvalStatus       ApprovalStatus    @default(PENDING)
+  createdById          String
+  approvedById         String?
+  parentAssetId        String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  assetType            AssetType         @relation(fields: [assetTypeId], references: [id], onDelete: Restrict)
+  assetModel           AssetModel?       @relation(fields: [assetModelId], references: [id], onDelete: SetNull)
+  branch               Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  location             Location?         @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  bay                  Bay?              @relation(fields: [bayId], references: [id], onDelete: SetNull)
+  currentEmployee      Employee?         @relation(fields: [currentEmployeeId], references: [id], onDelete: SetNull)
+  createdBy            User              @relation("AssetCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy           User?             @relation("AssetApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  parentAsset          Asset?            @relation("AssetBundle", fields: [parentAssetId], references: [id], onDelete: SetNull)
+  childAssets          Asset[]           @relation("AssetBundle")
+  approvals            AssetApproval[]
+  assignments          AssetAssignment[]
+  firmwareHistory      FirmwareHistory[]
+  auditLogs            AssetAuditLog[]
+
+  @@index([branchId, locationId, bayId])
+  @@index([warrantyExpiry])
+  @@index([firmwareVersion])
+}
+
+model AssetAssignment {
+  id            String         @id @default(cuid())
+  assetId        String
+  assignmentType AssignmentType
+  branchId       String?
+  locationId     String?
+  bayId          String?
+  employeeId     String?
+  assignedById   String
+  assignedAt     DateTime      @default(now())
+  unassignedAt   DateTime?
+  remarks        String?
+  asset          Asset          @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  branch         Branch?        @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  location       Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  bay            Bay?           @relation(fields: [bayId], references: [id], onDelete: SetNull)
+  employee       Employee?      @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  assignedBy     User           @relation(fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@index([assetId, assignedAt])
+  @@index([employeeId, assignedAt])
+}
+
+model AssetApproval {
+  id            String          @id @default(cuid())
+  assetId       String
+  action        ApprovalAction
+  status        ApprovalStatus  @default(PENDING)
+  requestedById String
+  reviewedById  String?
+  reason        String?
+  snapshot      Json?
+  requestedAt   DateTime        @default(now())
+  reviewedAt    DateTime?
+  asset         Asset           @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  requestedBy   User            @relation("ApprovalRequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  reviewedBy    User?           @relation("ApprovalReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, requestedAt])
+}
+
+model FirmwareHistory {
+  id            String    @id @default(cuid())
+  assetId       String
+  updatedById   String
+  version       String
+  updatedAt     DateTime  @default(now())
+  notes         String?
+  asset         Asset     @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  updatedBy     User      @relation(fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([assetId, updatedAt])
+}
+
+model AssetAuditLog {
+  id            String   @id @default(cuid())
+  assetId       String
+  actorId       String
+  eventType     String
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  actor         User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([assetId, createdAt])
+}

@@ -1,0 +1,86 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #c8ddbb;
+  box-shadow: 0 28px 45px rgba(44, 61, 30, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.logoWrap {
+  margin-bottom: 6px;
+}
+
+.kicker {
+  font-size: 13px;
+  color: var(--accent);
+  font-family: var(--font-ibm-plex-mono), monospace;
+}
+
+.panel h1 {
+  margin-top: 8px;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #4c5f47;
+}
+
+.form {
+  margin-top: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.form label {
+  font-size: 14px;
+}
+
+.form input {
+  border: 1px solid #b8cda8;
+  border-radius: 12px;
+  padding: 11px;
+  outline: none;
+  background: #fcfff9;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form input:focus {
+  border-color: #6d9368;
+  box-shadow: 0 0 0 2px rgba(123, 165, 108, 0.2);
+}
+
+.form button {
+  margin-top: 8px;
+  border: 1px solid #3f6b39;
+  background: #3f6b39;
+  color: #fff;
+  border-radius: 12px;
+  padding: 11px;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.form button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #a11e1e;
+  font-size: 14px;
+}

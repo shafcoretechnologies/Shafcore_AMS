@@ -1,0 +1,134 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.main {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.kicker {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.workspace {
+  display: grid;
+  gap: 14px;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.roleTag {
+  background: #e5f2dd;
+  border: 1px solid #b5cfaa;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.success {
+  color: #1f6f2a;
+  font-size: 13px;
+}
+
+.error {
+  color: #9d2323;
+  font-size: 13px;
+}
+
+.formCard,
+.tableCard {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.form {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.form label {
+  font-size: 12px;
+  color: #385536;
+}
+
+.form input,
+.form select,
+.form textarea {
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid #bad0ab;
+  background: #fcfff9;
+}
+
+.form textarea {
+  grid-column: span 3;
+}
+
+.form button {
+  grid-column: span 3;
+  border: 1px solid #2f5f32;
+  background: #2f5f32;
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.form button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tableCard ul {
+  list-style: none;
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.tableCard li {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  background: #f7fbee;
+  border: 1px solid #dbe7ca;
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .form textarea,
+  .form button {
+    grid-column: span 1;
+  }
+
+  .tableCard li {
+    grid-template-columns: 1fr 1fr;
+  }
+}

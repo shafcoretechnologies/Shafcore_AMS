@@ -1,0 +1,96 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.main {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.header {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.kicker {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 12px;
+}
+
+.infoCard,
+.formCard {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.infoCard p {
+  margin-top: 8px;
+}
+
+.hint {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #46604a;
+}
+
+.form {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.form label {
+  font-size: 13px;
+}
+
+.form input {
+  border: 1px solid #b8cda8;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fcfff9;
+}
+
+.form button {
+  margin-top: 8px;
+  border: 1px solid #3f6b39;
+  background: #3f6b39;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.form button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #9d2323;
+  font-size: 13px;
+}
+
+.success {
+  color: #1f6f2a;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}

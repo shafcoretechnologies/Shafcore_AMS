@@ -1,65 +1,79 @@
-import Image from "next/image";
 import styles from "./page.module.css";
+import { redirect } from "next/navigation";
+import { getSessionFromCookieStore } from "@/lib/auth/session";
+import Link from "next/link";
+import Image from "next/image";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getSessionFromCookieStore();
+  if (!session) {
+    redirect("/login");
+  }
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <section className={styles.hero}>
+          <div>
+            <div className={styles.heroLogo}>
+              <Image src="/shafcore-logo.png" alt="Shafcore" width={128} height={105} priority />
+            </div>
+            <p className={styles.kicker}>Shafcore AMS</p>
+            <h1>Track every asset, every bay, every branch.</h1>
+            <p className={styles.subtitle}>
+              Built for IT operations: central inventory, employee tagging, firmware and warranty visibility, and
+              approval-controlled onboarding.
+            </p>
+            <div className={styles.quickActions}>
+              <Link href="/assets" className={styles.primaryAction}>
+                Open Asset Details
+              </Link>
+              <Link href="/assets" className={styles.secondaryAction}>
+                Add New Asset
+              </Link>
+              <Link href="/master-data" className={styles.secondaryAction}>
+                Manage Master Data
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.grid}>
+          <Link href="/master-data" className={styles.cardLink}>
+            <article className={styles.card}>
+              <h2>Master Data</h2>
+              <p>Manage branches, locations, bays, employees, and core structure.</p>
+            </article>
+          </Link>
+
+          <Link href="/assets" className={styles.cardLink}>
+            <article className={styles.card}>
+              <h2>Assets</h2>
+              <p>Add assets quickly and assign them to location, bay, or employee.</p>
+            </article>
+          </Link>
+
+          <Link href="/approvals" className={styles.cardLink}>
+            <article className={styles.card}>
+              <h2>Approvals</h2>
+              <p>Review asset onboarding requests and process manager approvals.</p>
+            </article>
+          </Link>
+        </section>
+
+        <section className={styles.footerPanel}>
+          <div>
+            <h3>Welcome, {session.user.name}</h3>
+            <p>
+              Role: <strong>{session.user.role}</strong>
+            </p>
+          </div>
+          <div className={styles.tagRow}>
+            <span>Master Data</span>
+            <span>Assets</span>
+            <span>Approvals</span>
+          </div>
+        </section>
       </main>
     </div>
   );
